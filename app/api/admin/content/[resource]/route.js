@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminCatalogClient, isAuthorizedAdminRequest } from "@/lib/adminCatalog";
+import { comboOfferFieldsFromHeroSlide, isComboHeroSlide } from "@/lib/heroSlides";
 
 const resources = {
   "hero-slides": {
@@ -36,6 +37,15 @@ function payloadFor(config, body) {
   return payload;
 }
 
+async function syncComboOfferFromHeroSlide(supabase, slide) {
+  if (!isComboHeroSlide(slide)) return;
+  const { error } = await supabase
+    .from("combo_offers")
+    .update(comboOfferFieldsFromHeroSlide(slide))
+    .eq("slug", "choose-any-3");
+  if (error) throw new Error(`Unable to sync the combo offer banner: ${error.message}`);
+}
+
 export async function GET(request, { params }) {
   if (!isAuthorizedAdminRequest(request)) return unauthorized();
   const config = configuration(params.resource);
@@ -50,8 +60,10 @@ export async function POST(request, { params }) {
   const config = configuration(params.resource);
   if (!config) return NextResponse.json({ error: "Unknown content resource." }, { status: 404 });
   try {
-    const { data, error } = await createAdminCatalogClient().from(config.table).insert(payloadFor(config, await request.json())).select().single();
+    const supabase = createAdminCatalogClient();
+    const { data, error } = await supabase.from(config.table).insert(payloadFor(config, await request.json())).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await syncComboOfferFromHeroSlide(supabase, data);
     return NextResponse.json({ item: data }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -65,8 +77,10 @@ export async function PATCH(request, { params }) {
   try {
     const body = await request.json();
     if (!body.id) return NextResponse.json({ error: "Record id is required." }, { status: 400 });
-    const { data, error } = await createAdminCatalogClient().from(config.table).update(payloadFor(config, body)).eq("id", body.id).select().single();
+    const supabase = createAdminCatalogClient();
+    const { data, error } = await supabase.from(config.table).update(payloadFor(config, body)).eq("id", body.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await syncComboOfferFromHeroSlide(supabase, data);
     return NextResponse.json({ item: data });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

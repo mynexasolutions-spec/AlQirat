@@ -11,7 +11,7 @@ const inputClass = "mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white
 
 const contentConfigurations = {
   "hero-slides": {
-    eyebrow: "Storefront content", title: "Hero Slides", description: "Create and control homepage hero campaigns.", icon: ImageIcon,
+    eyebrow: "Storefront content", title: "Hero Slides", description: "Create and control homepage hero campaigns. Combo slide changes sync with Combo Offer.", icon: ImageIcon,
     fields: [
       { name: "title", label: "Title", required: true }, { name: "subtitle", label: "Subtitle" },
       { name: "desktop_image_url", label: "Desktop image URL", required: true, hint: "12:5 · 1920 × 800 px · JPG, PNG, or WebP" }, { name: "mobile_image_url", label: "Mobile image URL", hint: "3:4 · 1080 × 1440 px · JPG, PNG, or WebP" },

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import SmartImage from "../SmartImage";
 import { useStorefrontContent } from "../useStorefrontData";
 import { brand } from "@/lib/brand";
+import { isComboHeroSlide } from "@/lib/heroSlides";
 
 // "Fragrances That Define You" -> "Fragrances" / "That Define You"
 function splitTitle(title) {
@@ -11,16 +12,12 @@ function splitTitle(title) {
   return words.length >= 3 ? [words[0], words.slice(1).join(" ")] : [title];
 }
 
-function isComboSlide(slide) {
-  return slide.cta_href === "/combo" || slide.desktop_image_url === "/COMBO.png";
-}
-
 export default function HomeHero({ initialContent }) {
   const { data } = useStorefrontContent(initialContent);
   const comboOffer = data.combo_offer;
   const slides = (data.hero_slides || [])
-    .filter((item) => !isComboSlide(item) || !comboOffer || comboOffer.is_active !== false)
-    .map((item) => isComboSlide(item) && comboOffer ? {
+    .filter((item) => !isComboHeroSlide(item) || !comboOffer || comboOffer.is_active !== false)
+    .map((item) => isComboHeroSlide(item) && comboOffer ? {
       ...item,
       title: item.title || comboOffer.title,
       subtitle: item.subtitle || comboOffer.subtitle,
@@ -42,8 +39,9 @@ export default function HomeHero({ initialContent }) {
 
   const activeIndex = active % slides.length;
   const slide = slides[activeIndex];
+  const comboSlide = isComboHeroSlide(slide);
   const lines = splitTitle(slide.title || "");
-  const comboSlide = isComboSlide(slide);
+  const desktopLines = comboSlide ? [slide.title || ""] : lines;
 
   function openComboOffer(event) {
     if (!comboSlide || event.target.closest("a, button")) return;
@@ -103,14 +101,19 @@ export default function HomeHero({ initialContent }) {
 
       <div className="container-site relative z-10 flex min-h-[720px] flex-col pb-16 pt-12 md:min-h-[560px] md:justify-center md:pt-16 lg:min-h-[640px]">
         <div className="max-w-[560px]">
-          <div aria-hidden={comboSlide} className={comboSlide ? "invisible" : ""}>
-            <h1 key={slide.id || activeIndex} className="animate-fade-up font-serif text-[clamp(44px,6vw,78px)] font-semibold leading-[1.04] text-ink">
-              {lines.map((line) => (
+          <div className={comboSlide ? "invisible md:visible" : ""}>
+            <h1
+              key={slide.id || activeIndex}
+              className={comboSlide
+                ? "animate-fade-up font-serif text-[clamp(36px,3.25vw,54px)] font-semibold leading-[1.08] text-ink md:max-w-[620px]"
+                : "animate-fade-up font-serif text-[clamp(44px,6vw,78px)] font-semibold leading-[1.04] text-ink"}
+            >
+              {desktopLines.map((line) => (
                 <span key={line} className="block">{line}</span>
               ))}
             </h1>
 
-            <div className="mt-6 animate-fade-up [animation-delay:150ms]">
+            <div className={`${comboSlide ? "mt-4" : "mt-6"} animate-fade-up [animation-delay:150ms]`}>
               <span aria-hidden="true" className="flex items-center gap-2">
                 <span className="h-px w-24 bg-gold/70" />
                 <span className="h-1.5 w-1.5 rotate-45 bg-gold" />
@@ -119,12 +122,12 @@ export default function HomeHero({ initialContent }) {
               <p className="mt-4 text-[11.5px] font-medium uppercase tracking-[0.3em] text-ink/80">{brand.heroTagline}</p>
             </div>
 
-            <p className="mt-6 max-w-[250px] animate-fade-up text-[15.5px] leading-relaxed text-ink/75 [animation-delay:250ms] md:max-w-[440px]">
+            <p className={`${comboSlide ? "mt-4" : "mt-6"} max-w-[250px] animate-fade-up text-[15.5px] leading-relaxed text-ink/75 [animation-delay:250ms] md:max-w-[440px]`}>
               {slide.subtitle}
             </p>
           </div>
 
-          <a href={comboSlide ? "/combo" : slide.cta_href || "/shop"} className="btn-forest mt-8 animate-fade-up !px-7 [animation-delay:350ms]">
+          <a href={comboSlide ? "/combo" : slide.cta_href || "/shop"} className={`btn-forest relative z-20 ${comboSlide ? "mt-5" : "mt-8"} inline-flex animate-fade-up !px-7 [animation-delay:350ms]`}>
             {slide.cta_label || "Shop Now"}
           </a>
 

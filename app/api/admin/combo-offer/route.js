@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminCatalogClient, isAuthorizedAdminRequest } from "@/lib/adminCatalog";
+import { heroSlideFieldsFromComboOffer } from "@/lib/heroSlides";
 
 const offerFields = ["name", "title", "subtitle", "description", "banner_image_url", "mobile_banner_image_url", "cta_label", "cta_href", "default_unit_price", "combo_price", "bundle_quantity", "min_quantity", "max_quantity", "max_quantity_per_product", "allow_same_product", "allow_mixed_products", "is_active"];
 
@@ -98,6 +99,11 @@ export async function PUT(request) {
       const { error: insertError } = await supabase.from("combo_offer_products").insert(uniqueProducts.map((product, index) => ({ offer_id: saved.data.id, product_id: product.product_id, unit_price: Number(product.unit_price), sort_order: Number(product.sort_order ?? index), is_active: product.is_active !== false })));
       if (insertError) throw new Error(insertError.message);
     }
+    const { error: heroSyncError } = await supabase
+      .from("hero_slides")
+      .update(heroSlideFieldsFromComboOffer(saved.data))
+      .or("desktop_image_url.eq./COMBO.png,cta_href.eq./combo");
+    if (heroSyncError) throw new Error(`Unable to sync the combo hero slide: ${heroSyncError.message}`);
     return NextResponse.json(await readOffer());
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to save the combo offer." }, { status: 400 });
